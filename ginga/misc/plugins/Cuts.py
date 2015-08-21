@@ -758,15 +758,26 @@ Keyboard shortcuts: press 'h' for a full horizontal cut and 'j' for a full verti
         self.w.btn_edit.set_state(mode == 'edit')
 
     def save_cb(self):
-        fig, xarr, yarr = self.plot.get_data()
+        target = Widgets.SaveDialog(title='Save cuts data').get_path()
 
-        target = Widgets.SaveDialog(title='Save plot', selectedfilter='*.png').get_path()
-        with open(target, 'w') as target_file:
-            fig.savefig(target_file, dpi=100)
+        # Save as fits file
+        image = self.fitsimage.get_image()
+        self.fv.error_wrap(image.save_as_file, target)
 
-        target = Widgets.SaveDialog(title='Save data', selectedfilter='*.npz').get_path()
-        with open(target, 'w') as target_file:
-            numpy.savez_compressed(target_file, x=xarr, y=yarr)
+        if target:
+            fig, xarr, yarr = self.plot.get_data()
+            fig.savefig(target, dpi=100)
+            numpy.savez_compressed(target, x=xarr, y=yarr)
+
+        enabled_axes = [pos for pos, val in enumerate(self.axes_states) if val is True]
+        if not enabled_axes or self.cutstag is self._new_cut:
+            return
+
+        target = Widgets.SaveDialog(title='Save slit data').get_path()
+        if target:
+            fig2, xarr2, yarr2 = self.plot2.get_data()
+            fig2.savefig(target, dpi=100)
+            numpy.savez_compressed(target, x=xarr2, y=yarr2)
 
     def axis_toggle_cb(self, w, tf, pos):
         # Deactivate other checkboxes
